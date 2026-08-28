@@ -1,28 +1,38 @@
 # TechAlert
 
-Aplicação desenvolvida como parte do Checkpoint de REST Client. O objetivo é demonstrar a integração entre aplicações através do consumo de uma API REST externa, utilizando um cliente HTTP em Java (Spring Cloud OpenFeign).
+Aplicação desenvolvida como parte do Checkpoint de REST Client. 
+O objetivo é demonstrar a integração entre aplicações através do consumo de uma API REST externa,
+utilizando um cliente HTTP em Java (Spring Cloud OpenFeign).
 
-A TechAlert consulta a API pública **The Movie Database (TMDB)** para retornar informações sobre filmes, simulando um cenário em que uma central de TI acompanha dados externos relevantes para suas operações.
+A TechAlert consulta a API pública **The Movie Database (TMDB)** para 
+retornar informações sobre filmes, 
+simulando um cenário em que uma central de TI 
+acompanha dados externos relevantes para suas operações.
 
 ## Sumário
 
 - [API Externa Utilizada](#api-externa-utilizada)
 - [Arquitetura](#arquitetura)
 - [Endpoints da Aplicação](#endpoints-da-aplicação)
-- [REST Client (Feign)](#rest-client-feign)
 - [Como Rodar Localmente](#como-rodar-localmente)
 - [Profiles de Ambiente](#profiles-de-ambiente)
 - [Testando os Endpoints](#testando-os-endpoints)
-- [Deploy no Render](#deploy-no-render)
 - [Tratamento de Erros](#tratamento-de-erros)
+
+
+## Integrantes
+
+| Nome| RM |
+|---|---|
+|Arthur dos Santos Cabral| 566515|
+|Vitor Fria Dalmagro| 566052 |
 
 ## API Externa Utilizada
 
 | | |
 |---|---|
 | **Nome da API** | The Movie Database (TMDB) |
-| **URL** | https://api.themoviedb.org/3 |
-| **Objetivo** | Consultar informações sobre filmes (título, sinopse, avaliação, data de lançamento) para simular um cenário de monitoramento de conteúdo externo relevante para a equipe de TI da TechAlert |
+| **URL** | https://api.themoviedb.org|
 | **Autenticação** | Bearer Token (v4 Read Access Token), enviado via header `Authorization` |
 
 **Endpoints consumidos na API externa:**
@@ -56,22 +66,6 @@ A TechAlert consulta a API pública **The Movie Database (TMDB)** para retornar 
 
 ## Arquitetura
 
-```
-Cliente (curl / Postman / navegador)
-        │
-        ▼
-FilmeController / HealthController   (API própria da TechAlert)
-        │
-        ▼
-FilmeService                          (regras de negócio e validação)
-        │
-        ▼
-TmdbClient (Feign)                    (REST Client - consumo da API externa)
-        │
-        ▼
-API TMDB (https://api.themoviedb.org/3)
-```
-
 **Fluxo de uma requisição, do recebimento ao retorno:**
 
 1. Cliente faz a requisição para a TechAlert (ex: `GET /api/filmes/603`)
@@ -100,56 +94,6 @@ API TMDB (https://api.themoviedb.org/3)
 }
 ```
 
-## REST Client (Feign)
-
-O consumo da API externa é feito via **Spring Cloud OpenFeign**, um cliente HTTP declarativo. Os pontos abaixo demonstram cada etapa exigida pelo desafio:
-
-**1. Criação/configuração do cliente** — `TmdbClient.java`:
-
-```java
-@FeignClient(
-        name = "tmdb",
-        url = "https://api.themoviedb.org/3",
-        configuration = FeignConfig.class
-)
-public interface TmdbClient {
-
-    @GetMapping("/search/movie")
-    FilmeResponseDTO buscarFilmesPorTitulo(
-            @RequestParam("query") String titulo,
-            @RequestParam("language") String language
-    );
-
-    @GetMapping("/movie/{id}")
-    FilmeDTO buscarFilmePorId(
-            @PathVariable("id") Long id,
-            @RequestParam("language") String language
-    );
-}
-```
-
-**2. Definição da URL:** feita no atributo `url` do `@FeignClient`, apontando para `https://api.themoviedb.org/3`.
-
-**3. Envio da requisição e utilização de parâmetros:** `@PathVariable` (id do filme), `@RequestParam` (título buscado e idioma), e `Authorization` como **header**, injetado automaticamente em todas as chamadas via `FeignConfig`:
-
-```java
-@Bean
-public RequestInterceptor requestInterceptor(){
-    return requestTemplate -> {
-        requestTemplate.header("Authorization", "Bearer " + tmdbToken);
-        requestTemplate.header("Accept", "application/json");
-    };
-}
-```
-
-**4. Recebimento da resposta e conversão para DTO:** o Feign usa o Jackson internamente para converter o JSON retornado pela TMDB diretamente em `FilmeDTO`/`FilmeResponseDTO`, sem código manual de parsing:
-
-```java
-FilmeDTO filme = tmdbClient.buscarFilmePorId(id, language);
-```
-
-**5. Tratamento de erros:** exceções específicas do Feign (`FeignException.NotFound`) e de validação são capturadas separadamente no `FilmeService`, retornando respostas HTTP coerentes ao cliente da TechAlert (ver seção [Tratamento de Erros](#tratamento-de-erros)).
-
 ## Como Rodar Localmente
 
 ### Pré-requisitos
@@ -162,8 +106,8 @@ FilmeDTO filme = tmdbClient.buscarFilmePorId(id, language);
 
 ```bash
 # 1. Clone o repositório
-git clone <url-do-repositorio>
-cd techalert
+git clone https://github.com/VitorDalmagro/JavaCheckpoint4.git
+cd JavaCheckpoint4
 
 # 2. Defina o token da TMDB como variável de ambiente
 export TMDB_API_TOKEN=seu_token_v4_aqui        # Linux/Mac
@@ -179,16 +123,23 @@ A aplicação sobe em `http://localhost:8080`.
 
 O projeto usa profiles do Spring para separar configuração de desenvolvimento e produção:
 
-| Arquivo | Uso | Contém segredo? |
-|---|---|---|
-| `application.properties` | Configuração base, comum a todos os ambientes | Não (token via `${TMDB_API_TOKEN}`) |
-| `application-dev.properties` | Logs verbosos (`FULL`), devtools ativo | Não |
-| `application-prod.properties` | Logs reduzidos (`BASIC`/`INFO`), devtools desativado | Não |
-| `application-example.properties` | Modelo de referência para quem for configurar o projeto | Não (valores fictícios) |
+| Arquivo | Uso |
+|---|---|
+| `application.properties` | Configuração base, comum a todos os ambientes | 
+| `application-dev.properties` | Logs verbosos (`FULL`), devtools ativo | 
+| `application-prod.properties` | Logs reduzidos (`BASIC`/`INFO`), devtools desativado |
+| `application-example.properties` | Modelo de referência para quem for configurar o projeto | 
 
 O token da TMDB **nunca** é commitado — ele é lido de uma variável de ambiente (`TMDB_API_TOKEN`), tanto local quanto no Render.
 
 ## Testando os Endpoints
+
+A aplicação pode ser testada tanto localmente quanto direto na versão publicada no Render. Basta trocar a base da URL:
+
+- **Local:** `http://localhost:8080`
+- **Render:** `https://javacheckpoint4.onrender.com`
+
+### Testando localmente
 
 ```bash
 # Health check
@@ -208,25 +159,27 @@ curl http://localhost:8080/api/filmes/999999999          # ID inexistente -> 404
 curl "http://localhost:8080/api/filmes/buscar?titulo="   # título vazio -> 400
 ```
 
-## Deploy no Render
+### Testando no Render (produção)
 
-1. Suba o projeto no GitHub (sem segredos commitados)
-2. No Render: **New + → Web Service**, conecte o repositório
-3. **Build Command:**
-   ```bash
-   ./mvnw clean package -DskipTests
-   ```
-4. **Start Command:**
-   ```bash
-   java -jar target/aplicacao-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
-   ```
-5. **Environment Variables:**
-    - `TMDB_API_TOKEN` = token real da TMDB
-6. **Health Check Path:** `/api/health`
+```bash
+# Health check
+curl https://javacheckpoint4.onrender.com/api/health
 
-> A aplicação escuta na porta definida pela variável `PORT`, que o Render injeta automaticamente (`server.port=${PORT:8080}` no `application.properties`).
+# Busca por título
+curl "https://javacheckpoint4.onrender.com/api/filmes/buscar?titulo=Matrix"
 
-**URL do deploy:** `<preencher após o deploy>`
+# Consulta por ID
+curl https://javacheckpoint4.onrender.com/api/filmes/603
+
+# Consulta formatada
+curl https://javacheckpoint4.onrender.com/api/filmes/603/formatado
+
+# Casos de erro
+curl https://javacheckpoint4.onrender.com/api/filmes/999999999
+curl "https://javacheckpoint4.onrender.com/api/filmes/buscar?titulo="
+```
+
+> No navegador, também é possível acessar diretamente, por exemplo: https://javacheckpoint4.onrender.com/api/filmes/603
 
 ## Tratamento de Erros
 
