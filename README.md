@@ -70,7 +70,7 @@ acompanha dados externos relevantes para suas operações.
 
 ### Pré-requisitos
 
-- Java 17
+- Java 25
 - Maven (ou use o `./mvnw` incluso no projeto)
 - Um token de leitura (v4) da TMDB, obtido em https://www.themoviedb.org/settings/api
 
