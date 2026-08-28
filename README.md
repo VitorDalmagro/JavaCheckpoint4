@@ -35,34 +35,6 @@ acompanha dados externos relevantes para suas operações.
 | **URL** | https://api.themoviedb.org|
 | **Autenticação** | Bearer Token (v4 Read Access Token), enviado via header `Authorization` |
 
-**Endpoints consumidos na API externa:**
-
-| Endpoint TMDB | Uso |
-|---|---|
-| `GET /search/movie` | Busca filmes por título |
-| `GET /movie/{id}` | Detalhes de um filme específico |
-
-**Parâmetros utilizados na chamada à API externa:**
-
-- **Query Params:** `query` (título buscado), `language` (idioma da resposta, ex: `pt-BR`)
-- **Path Param:** `id` (identificador do filme na TMDB)
-- **Header:** `Authorization: Bearer {token}` (autenticação)
-
-**Exemplo de resposta JSON (`GET /movie/603`):**
-
-```json
-{
-  "id": 603,
-  "title": "Matrix",
-  "original_title": "The Matrix",
-  "overview": "O jovem programador Thomas Anderson é atormentado por estranhos pesadelos...",
-  "release_date": "1999-03-31",
-  "vote_average": 8.256,
-  "poster_path": "/lDqMDI3xpbB9UQRyeXfei0MXhqb.jpg",
-  "original_language": "en",
-  "popularity": 46.5646
-}
-```
 
 ## Arquitetura
 
